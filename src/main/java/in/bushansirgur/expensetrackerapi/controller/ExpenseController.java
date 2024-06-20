@@ -2,7 +2,14 @@ package in.bushansirgur.expensetrackerapi.controller;
 
 import java.sql.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import in.bushansirgur.expensetrackerapi.dto.ExpenseDTO;
+import in.bushansirgur.expensetrackerapi.entity.Category;
+import in.bushansirgur.expensetrackerapi.io.CategoryResponse;
+import in.bushansirgur.expensetrackerapi.io.ExpenseRequest;
+import in.bushansirgur.expensetrackerapi.io.ExpenseResponse;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -29,8 +36,9 @@ public class ExpenseController {
 	private ExpenseService expenseService;
 	
 	@GetMapping("/expenses")
-	public List<Expense> getAllExpenses(Pageable page) {
-		return expenseService.getAllExpenses(page).toList();
+	public List<ExpenseResponse> getAllExpenses(Pageable page) {
+		List<ExpenseDTO> listOfExpensesDTO = expenseService.getAllExpenses(page);
+		return listOfExpensesDTO.stream().map(expenseDTO -> mapToResponse(expenseDTO)).collect(Collectors.toList());
 	}
 	
 	@GetMapping("/expenses/{id}")
@@ -46,10 +54,12 @@ public class ExpenseController {
 	
 	@ResponseStatus(value = HttpStatus.CREATED)
 	@PostMapping("/expenses")
-	public Expense saveExpenseDetails(@Valid @RequestBody Expense expense) {
-		return expenseService.saveExpenseDetails(expense);
+	public ExpenseResponse saveExpenseDetails(@Valid @RequestBody ExpenseRequest expenseRequest) {
+		ExpenseDTO expenseDTO = mapToDTO(expenseRequest);
+		expenseDTO = expenseService.saveExpenseDetails(expenseDTO);
+		return mapToResponse(expenseDTO);
 	}
-	
+
 	@PutMapping("/expenses/{id}")
 	public Expense updateExpenseDetails(@RequestBody Expense expense, @PathVariable String id){
 		return expenseService.updateExpenseDetails(id, expense);
@@ -70,6 +80,35 @@ public class ExpenseController {
 											@RequestParam(required = false) Date endDate,
 											Pageable page) {
 		return expenseService.readByDate(startDate, endDate, page);
+	}
+
+	private ExpenseDTO mapToDTO(ExpenseRequest expenseRequest) {
+		return ExpenseDTO.builder()
+				.name(expenseRequest.getName())
+				.description(expenseRequest.getDescription())
+				.amount(expenseRequest.getAmount())
+				.date(expenseRequest.getDate())
+				.categoryId(expenseRequest.getCategoryId())
+				.build();
+	}
+
+	private ExpenseResponse mapToResponse(ExpenseDTO expenseDTO) {
+		return ExpenseResponse.builder()
+				.expenseId(expenseDTO.getExpenseId())
+				.name(expenseDTO.getName())
+				.description(expenseDTO.getDescription())
+				.amount(expenseDTO.getAmount())
+				.date(expenseDTO.getDate())
+				.categoryResponse(mapToCategoryResponse(expenseDTO.getCategory()))
+				.createdAt(expenseDTO.getCreatedAt())
+				.updatedAt(expenseDTO.getUpdatedAt())
+				.build();
+	}
+
+	private CategoryResponse mapToCategoryResponse(Category category) {
+		CategoryResponse returnValue = new CategoryResponse();
+		BeanUtils.copyProperties(category, returnValue);
+		return returnValue;
 	}
 }
 
