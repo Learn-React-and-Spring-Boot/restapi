@@ -36,18 +36,24 @@ public class ExpenseServiceImpl implements ExpenseService {
 	}
 
 	@Override
-	public Expense getExpenseById(String expenseId){
+	public ExpenseDTO getExpenseById(String expenseId){
+		Expense existingExpense = getExpenseEntityById(expenseId);
+		return mapToDTO(existingExpense);
+	}
+
+	private Expense getExpenseEntityById(String expenseId) {
 		Optional<Expense> expense = expenseRepo.findByUserIdAndExpenseId(userService.getLoggedInUser().getId(), expenseId);
-		if (expense.isPresent()) {
-			return expense.get();
+		if (!expense.isPresent()) {
+			throw new ResourceNotFoundException("Expense is not found for the id "+ expenseId);
+
 		}
-		throw new ResourceNotFoundException("Expense is not found for the id "+expenseId);
+		return expense.get();
 	}
 
 	@Override
 	public void deleteExpenseById(String expenseId) {
-		Expense expense = getExpenseById(expenseId);
-		expenseRepo.delete(expense);
+		Expense existingExpense = getExpenseEntityById(expenseId);
+		expenseRepo.delete(existingExpense);
 	}
 
 	@Override
@@ -65,14 +71,22 @@ public class ExpenseServiceImpl implements ExpenseService {
 	}
 
 	@Override
-	public Expense updateExpenseDetails(String expenseId, Expense expense){
-		Expense existingExpense = getExpenseById(expenseId);
+	public ExpenseDTO updateExpenseDetails(String expenseId, ExpenseDTO expense){
+		Expense existingExpense = getExpenseEntityById(expenseId);
+		//Get the category from expensedto and fetch from db
+		if (expense.getCategoryId() != null) {
+			Optional<Category> optionalCategory = categoryRepository.findByUserIdAndCategoryId(userService.getLoggedInUser().getId(), expense.getCategoryId());
+			if (!optionalCategory.isPresent()) {
+				throw new ResourceNotFoundException("Category not found for the categoryId "+expense.getCategoryId());
+			}
+			existingExpense.setCategory(optionalCategory.get());
+		}
 		existingExpense.setName(expense.getName() != null ? expense.getName() : existingExpense.getName());
 		existingExpense.setDescription(expense.getDescription() != null ? expense.getDescription() : existingExpense.getDescription());
-		existingExpense.setCategory(expense.getCategory() != null ? expense.getCategory() : existingExpense.getCategory());
 		existingExpense.setDate(expense.getDate() != null ? expense.getDate() : existingExpense.getDate());
 		existingExpense.setAmount(expense.getAmount() != null ? expense.getAmount() : existingExpense.getAmount());
-		return expenseRepo.save(existingExpense);
+		Expense updatedExpense = expenseRepo.save(existingExpense);
+		return mapToDTO(updatedExpense);
 	}
 
 	@Override

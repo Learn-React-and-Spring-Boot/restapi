@@ -13,13 +13,13 @@ public interface ExpenseService {
 	
 	List<ExpenseDTO> getAllExpenses(Pageable page);
 	
-	Expense getExpenseById(String id);
+	ExpenseDTO getExpenseById(String id);
 	
 	void deleteExpenseById(String expenseId);
 
 	ExpenseDTO saveExpenseDetails(ExpenseDTO expenseDTO);
 
-	Expense updateExpenseDetails(String expenseId, Expense expense);
+	ExpenseDTO updateExpenseDetails(String expenseId, ExpenseDTO expenseDTO);
 	
 	List<Expense> readByCategory(String category, Pageable page);
 	

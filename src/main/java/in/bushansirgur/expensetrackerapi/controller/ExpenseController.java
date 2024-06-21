@@ -42,8 +42,9 @@ public class ExpenseController {
 	}
 	
 	@GetMapping("/expenses/{id}")
-	public Expense getExpenseById(@PathVariable String id){
-		return expenseService.getExpenseById(id);
+	public ExpenseResponse getExpenseById(@PathVariable String id){
+		ExpenseDTO expenseDTO = expenseService.getExpenseById(id);
+		return mapToResponse(expenseDTO);
 	}
 	
 	@ResponseStatus(value = HttpStatus.NO_CONTENT)
@@ -61,8 +62,10 @@ public class ExpenseController {
 	}
 
 	@PutMapping("/expenses/{id}")
-	public Expense updateExpenseDetails(@RequestBody Expense expense, @PathVariable String id){
-		return expenseService.updateExpenseDetails(id, expense);
+	public ExpenseResponse updateExpenseDetails(@RequestBody ExpenseRequest expenseRequest, @PathVariable String id){
+		ExpenseDTO expenseDTO = mapToDTO(expenseRequest);
+		expenseDTO = expenseService.updateExpenseDetails(id, expenseDTO);
+		return mapToResponse(expenseDTO);
 	}
 	
 	@GetMapping("/expenses/category")
